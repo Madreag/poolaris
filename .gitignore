@@ -1,0 +1,46 @@
+# ============================================================================
+# Poolaris .gitignore
+# ============================================================================
+
+# --- Runtime data: NEVER commit (real pool data, DB, backups, logs, PII) ----
+# The server recreates data/ on first run; a fresh clone starts empty.
+data/
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- Internal planning / audit / security-critique docs (kept local) -------
+# Remove this line if you want to publish the design docs.
+docs/
+
+# --- Dev & test artifacts --------------------------------------------------
+__auditshots/
+__testserver.sh
+__*.js
+__*.png
+__*.html
+*.tmp
+
+# --- Logs ------------------------------------------------------------------
+*.log
+
+# --- Node (only used by the test harness; no deps are vendored) ------------
+node_modules/
+
+# --- OS / editor cruft -----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

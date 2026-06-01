@@ -1,0 +1,14 @@
+{
+  "name": "Poolaris — Perfect Pool Copilot",
+  "short_name": "Poolaris",
+  "description": "Test, track, and dial in your pool the Trouble Free Pool way.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a1628",
+  "theme_color": "#0e7da8",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

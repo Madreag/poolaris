@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Poolaris">
+  <rect width="512" height="512" fill="#0a1628"/>
+  <path d="M256 104C256 104 150 224 150 308a106 106 0 0 0 212 0C362 224 256 104 256 104Z" fill="#15aabf"/>
+  <path d="M256 168C256 168 198 244 198 300a58 58 0 0 0 116 0C314 244 256 168 256 168Z" fill="#7fdbe8" opacity=".55"/>
+  <circle cx="300" cy="356" r="20" fill="#eafaff" opacity=".85"/>
+</svg>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0e7da8" />
+<meta name="description" content="Poolaris — your guided copilot for a crystal-clear pool. Test, track, and get exact step-by-step instructions to reach perfect water, the Trouble Free Pool way." />
+<title>Poolaris · Your North Star for a Perfect Pool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C16 2 5 14 5 21a11 11 0 0 0 22 0C27 14 16 2 16 2Z' fill='%2315aabf'/%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-onboarded="false">
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<!-- ====================== ANIMATED WATER BACKDROP ====================== -->
+<div class="bg-water" aria-hidden="true">
+  <div class="bg-water__caustics"></div>
+  <div class="bg-water__glow"></div>
+</div>
+
+<!-- ====================== APP HEADER ====================== -->
+<header class="appbar" role="banner">
+  <a class="brand" href="#dashboard" aria-label="Poolaris home">
+    <span class="brand__mark" id="brandMark" aria-hidden="true"></span>
+    <span class="brand__text">
+      <span class="brand__name">Poolaris</span>
+      <span class="brand__tag">your perfect-pool copilot</span>
+    </span>
+  </a>
+
+  <div class="appbar__status" id="appbarStatus" hidden>
+    <!-- live pool health pill injected by app.js -->
+  </div>
+
+  <div class="appbar__actions">
+    <span class="syncchip" id="syncChip" hidden aria-live="polite"></span>
+    <span id="appbarAccount" hidden></span>
+    <button class="iconbtn bell" id="btnAlerts" type="button" hidden aria-label="Alerts" title="Alerts">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="bell__badge" id="alertBadge" hidden></span>
+    </button>
+    <button class="iconbtn appbar__stowed" id="btnTheme" type="button" aria-label="Toggle dark mode" title="Toggle dark mode" aria-pressed="false"></button>
+    <button class="iconbtn appbar__stowed" id="btnHelp" type="button" aria-label="Help &amp; learn" title="Help &amp; learn">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.2 9.2a2.8 2.8 0 1 1 4 2.5c-.9.5-1.7 1.1-1.7 2.2v.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11.7" cy="17.2" r="1.2" fill="currentColor"/></svg>
+    </button>
+    <button class="iconbtn appbar__stowed" id="btnReset" type="button" aria-label="Reset all my data" title="Reset all my data">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="iconbtn" id="btnMore" type="button" aria-label="More options" title="More" aria-haspopup="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ====================== AUTH GATE LAYER ====================== -->
+<div class="auth-layer" id="authLayer" hidden></div>
+
+<!-- ====================== COMPANY "servicing this client" CONTEXT BAR ====================== -->
+<div class="client-ctx" id="clientCtx" hidden></div>
+
+<!-- ====================== SIDE / BOTTOM NAV ====================== -->
+<nav class="nav" id="primaryNav" role="navigation" aria-label="Primary">
+  <a class="nav__item" data-route="dashboard" href="#dashboard">
+    <span class="nav__icon" data-icon="dashboard"></span><span class="nav__label">Dashboard</span>
+  </a>
+  <a class="nav__item" data-route="log" href="#log">
+    <span class="nav__icon" data-icon="log"></span><span class="nav__label">Test &amp; Log</span>
+  </a>
+  <a class="nav__item" data-route="plan" href="#plan">
+    <span class="nav__icon" data-icon="plan"></span><span class="nav__label">Path to Perfect</span>
+  </a>
+  <a class="nav__item" data-route="calculators" href="#calculators">
+    <span class="nav__icon" data-icon="calc"></span><span class="nav__label">Calculators</span>
+  </a>
+  <a class="nav__item nav__item--slam" data-route="slam" href="#slam">
+    <span class="nav__icon" data-icon="slam"></span><span class="nav__label">SLAM Mode</span>
+  </a>
+  <a class="nav__item" data-route="learn" href="#learn">
+    <span class="nav__icon" data-icon="learn"></span><span class="nav__label">Learn</span>
+  </a>
+  <a class="nav__item" data-route="chem" href="#chem">
+    <span class="nav__icon" data-icon="flask"></span><span class="nav__label">Dosing</span>
+  </a>
+  <a class="nav__item" data-route="messages" href="#messages" data-persona="any" hidden>
+    <span class="nav__icon" data-icon="chat"></span><span class="nav__label">Messages</span><span class="nav__badge" id="msgNavBadge" hidden></span>
+  </a>
+  <a class="nav__item" data-route="roster" href="#roster" data-persona="company" hidden>
+    <span class="nav__icon" data-icon="grid"></span><span class="nav__label">Roster</span>
+  </a>
+  <a class="nav__item" data-route="route" href="#route" data-persona="company" hidden>
+    <span class="nav__icon" data-icon="wrench"></span><span class="nav__label">Today's Route</span>
+  </a>
+  <a class="nav__item" data-route="setup" href="#setup">
+    <span class="nav__icon" data-icon="setup"></span><span class="nav__label">My Pool</span>
+  </a>
+  <a class="nav__item" data-route="account" href="#account" data-persona="any" hidden>
+    <span class="nav__icon" data-icon="user"></span><span class="nav__label">Account</span>
+  </a>
+</nav>
+
+<!-- ====================== MAIN VIEW AREA ====================== -->
+<main class="main" id="main" role="main" tabindex="-1">
+  <section class="view" id="view-dashboard" data-route="dashboard"></section>
+  <section class="view" id="view-log" data-route="log" hidden></section>
+  <section class="view" id="view-plan" data-route="plan" hidden></section>
+  <section class="view" id="view-calculators" data-route="calculators" hidden></section>
+  <section class="view" id="view-slam" data-route="slam" hidden></section>
+  <section class="view" id="view-learn" data-route="learn" hidden></section>
+  <section class="view" id="view-chem" data-route="chem" hidden></section>
+  <section class="view" id="view-messages" data-route="messages" hidden></section>
+  <section class="view" id="view-roster" data-route="roster" hidden></section>
+  <section class="view" id="view-route" data-route="route" hidden></section>
+  <section class="view" id="view-account" data-route="account" hidden></section>
+  <section class="view" id="view-setup" data-route="setup" hidden></section>
+</main>
+
+<!-- ====================== ONBOARDING WIZARD OVERLAY ====================== -->
+<div class="overlay" id="onboarding" hidden aria-modal="true" role="dialog" aria-label="Set up your pool"></div>
+
+<!-- ====================== MODAL / SHEET LAYER ====================== -->
+<div class="overlay" id="modalLayer" hidden></div>
+
+<!-- ====================== TOOLTIP + TOAST LAYERS ====================== -->
+<div class="tooltip-pop" id="tooltipPop" role="tooltip" hidden></div>
+<div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ====================== SCRIPTS (non-module so file:// works) ====================== -->
+<script src="js/data.js"></script>
+<script src="js/svg.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/api.js"></script>
+<script src="js/insights.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/chem.js"></script>
+<script src="js/activities.js"></script>
+<script src="js/engage.js"></script>
+<script src="js/app.js"></script>
+<script src="js/portal.js"></script>
+</body>
+</html>
