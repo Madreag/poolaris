@@ -109,6 +109,8 @@
     return Math.max(0.10, Math.min(0.72, k));
   }
   function acidForPH(curPH, targetPH, ta, vol, acidPct) {
+    // non-finite / nonsensical inputs → no dose (NaN <= 0 is false, so it must be caught here)
+    if (!(curPH > 0) || !(targetPH > 0) || !(vol > 0)) return null;
     const dpH = curPH - targetPH;
     if (dpH <= 0) return null;
     ta = ta || 80;

@@ -1731,7 +1731,7 @@
       <div id="ca-demand"></div>
       <div id="ca-out"></div><div id="ca-viz"></div>`;
     function upd() {
-      const cur = parseFloat($("#ca-cur").value), tgt = parseFloat($("#ca-tgt").value), ta = parseFloat($("#ca-ta").value) || 80, vol = parseFloat($("#ca-vol").value) || p.volume, pct = $("#ca-pct").value;
+      const cur = parseFloat($("#ca-cur").value), tgt = parseFloat($("#ca-tgt").value), ta = parseFloat($("#ca-ta").value) || 80, vol = parseFloat($("#ca-vol").value) || p.volume || 14000, pct = $("#ca-pct").value;
       const a = C.acidForPH(cur, tgt, ta, vol, pct);
       // Taylor acid-demand titration (overrides the estimate when present — it's measured from the real water)
       const drops = parseFloat($("#ca-drops").value);
@@ -1739,7 +1739,9 @@
       $("#ca-demand").innerHTML = dm ? `<div class="callout callout--good" style="margin-top:10px">${S.icon("target")}<div><b>From your ${drops}-drop acid-demand test:</b> add <b>${C.fmtFlOz(dm.flOz)}</b> of ${pct}% muriatic acid (or ~<b>${C.fmtLb(dm.dryAcidOz / 16)}</b> of dry acid). <span class="muted">Titrated from your actual water — trust this over the pH-based estimate below. Add ¾, circulate, re-test.</span></div></div>` : "";
       $("#ca-out").innerHTML = a ? out(`Add about <b>${C.fmtFlOz(a.flOz)}</b> of ${pct}% muriatic acid to go from pH ${cur} to ${tgt}.<br><span class="muted" style="font-size:.85rem">This also lowers TA by ~${a.taDrop} ppm. Pour slowly over a return with the pump on. Add ¾, circulate 30 min, re-test.</span>`) : `<div class="callout" style="margin-top:6px">pH is already at or below target — no acid needed.</div>`;
       const pts = [];
-      for (let ph = 7.0; ph <= cur - 0.001; ph += 0.05) { const aa = C.acidForPH(cur, ph, ta, vol, pct); if (aa) pts.push({ x: ph, y: aa.flOz }); }
+      // clamp the upper bound: a huge/garbage "current pH" must not spin millions of iterations
+      const hiPh = Math.min(isNaN(cur) ? 0 : cur - 0.001, 9.0);
+      for (let ph = 7.0; ph <= hiPh; ph += 0.05) { const aa = C.acidForPH(cur, ph, ta, vol, pct); if (aa) pts.push({ x: ph, y: aa.flOz }); }
       const chart = pts.length > 1 ? CH.curve({ points: pts.reverse(), color: "#f08c00", xLabel: "target pH", yLabel: "fl oz",
         bands: [{ axis: "x", from: 7.5, to: 7.8, color: "#12b88622", label: "ideal pH", text: "#12b886" }],
         marker: a ? { x: tgt, y: a.flOz, label: Math.round(a.flOz) + " oz" } : null, fmtX: (v) => (Math.round(v * 10) / 10).toFixed(1) }) : "";
@@ -1938,7 +1940,7 @@
         <div class="field"><label>Cal-hypo % ${infoHTML("The available-chlorine percentage on the bag — usually 47–73%.")}</label><select class="input" id="hy-pct"><option>73</option><option>65</option><option>53</option><option>48</option></select></div>
       </div><div id="hy-out"></div>`;
     function upd() {
-      const cur = parseFloat($("#hy-cur").value) || 0, tgt = parseFloat($("#hy-tgt").value) || 0, vol = parseFloat($("#hy-vol").value) || p.volume, pct = parseFloat($("#hy-pct").value) || 73;
+      const cur = parseFloat($("#hy-cur").value) || 0, tgt = parseFloat($("#hy-tgt").value) || 0, vol = parseFloat($("#hy-vol").value) || p.volume || 14000, pct = parseFloat($("#hy-pct").value) || 73;
       const fcPerLb = pct * D.DOSE.calhypoFCperLbPerPct;
       const lb = tgt > cur ? ((tgt - cur) / fcPerLb) * (vol / 10000) : 0;
       const ch = (tgt - cur) * D.DOSE.calhypoCHperFC;
@@ -1955,7 +1957,7 @@
         <div class="field"><label>Volume (gal)</label><input class="input" type="number" id="tr-vol" value="${p.volume}"></div>
       </div><div id="tr-out"></div><div id="tr-viz"></div>`;
     function upd() {
-      const n = parseFloat($("#tr-n").value) || 0, wk = parseFloat($("#tr-wk").value) || 0, vol = parseFloat($("#tr-vol").value) || p.volume, f = vol / 10000;
+      const n = parseFloat($("#tr-n").value) || 0, wk = parseFloat($("#tr-wk").value) || 0, vol = parseFloat($("#tr-vol").value) || p.volume || 14000, f = vol / 10000;
       const fcPerWeek = n * D.DOSE.trichlorFCperTab8oz / f, cyaPerWeek = n * D.DOSE.trichlorCYAperTab8oz / f;
       const startCya = r.cya != null ? r.cya : 30, totalCya = cyaPerWeek * wk;
       $("#tr-out").innerHTML = out(`Each week, ${n} tab${n === 1 ? "" : "s"} delivers ~<b>${Math.round(fcPerWeek * 10) / 10} ppm FC</b> and adds ~<b>${Math.round(cyaPerWeek * 10) / 10} ppm CYA</b> that never leaves.<br><span class="muted" style="font-size:.85rem">Over ${wk} weeks that's <b>+${Math.round(totalCya)} ppm CYA</b> — from ${startCya} up to ~<b>${Math.round(startCya + totalCya)}</b>.</span>`);
@@ -1999,7 +2001,7 @@
         <div class="input-group" style="max-width:240px"><input class="input" type="number" step="any" inputmode="decimal" id="pu-drops" placeholder="e.g. 3"><span class="input-suffix">drops</span></div></div>
       <div id="pu-demand"></div><div id="pu-out"></div>`;
     function upd() {
-      const cur = parseFloat($("#pu-cur").value), tgt = parseFloat($("#pu-tgt").value), vol = parseFloat($("#pu-vol").value) || p.volume, d = tgt - cur;
+      const cur = parseFloat($("#pu-cur").value), tgt = parseFloat($("#pu-tgt").value), vol = parseFloat($("#pu-vol").value) || p.volume || 14000, d = tgt - cur;
       const boraxOz = d > 0 ? (d / 0.1) * D.DOSE.boraxOzPer01PHper10k * (vol / 10000) : 0;
       const drops = parseFloat($("#pu-drops").value);
       const sodaOz = drops > 0 ? C.sodaAshFromDemand(drops, vol) : 0;
@@ -2018,7 +2020,7 @@
         <div class="field"><label>Acid strength</label><select class="input" id="td-pct" aria-label="Acid strength">${ACID_STRENGTHS.map((x) => `<option ${p.acidPct === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
       </div><div id="td-out"></div>`;
     function upd() {
-      const cur = parseFloat($("#td-cur").value) || 0, tgt = parseFloat($("#td-tgt").value) || 0, vol = parseFloat($("#td-vol").value) || p.volume, pct = $("#td-pct").value;
+      const cur = parseFloat($("#td-cur").value) || 0, tgt = parseFloat($("#td-tgt").value) || 0, vol = parseFloat($("#td-vol").value) || p.volume || 14000, pct = $("#td-pct").value;
       const a = C.acidForTA(cur - tgt, vol, pct);
       $("#td-out").innerHTML = (cur > tgt && a) ? out(`Total acid to drop TA from ${cur} to ${tgt}: about <b>${C.fmtFlOz(a.flOz)}</b> of ${pct}% muriatic — but add it in rounds, not all at once.`) +
         `<div class="card" style="margin-top:12px;background:var(--foam-2)"><strong>${"❶"} The acid + aeration method</strong><ol style="margin:8px 0 0;padding-left:18px;color:var(--ink-2);line-height:1.85">

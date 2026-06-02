@@ -151,15 +151,18 @@
    *         marker:{x,y,label}, height, fmtX, fmtY, zeroY }
    */
   function curve(cfg) {
-    const pts = (cfg.points || []).filter((p) => p && !isNaN(p.x) && !isNaN(p.y));
+    const pts0 = (cfg.points || []).filter((p) => p && !isNaN(p.x) && !isNaN(p.y));
+    // Never build a path from an unbounded point set — decimate so a bad/huge input can't freeze
+    // the UI or overflow the stack (Math.max.apply throws "call stack exceeded" past ~100k args).
+    const pts = pts0.length > 1500 ? pts0.filter((_, i) => i % Math.ceil(pts0.length / 1500) === 0) : pts0;
     const W = 560, H = cfg.height || 210, pL = 48, pR = 16, pT = 18, pB = 38;
     const color = cfg.color || "#15aabf";
     const fmtX = cfg.fmtX || ((v) => Math.round(v * 10) / 10);
     const fmtY = cfg.fmtY || ((v) => Math.round(v * 10) / 10);
     if (pts.length < 2) return `<svg viewBox="0 0 ${W} ${H}" xmlns="${NS}"><text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="var(--svg-muted)" font-size="13">enter values…</text></svg>`;
-    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
-    let xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
-    let ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+    // loop-based min/max — apply() on a large array overflows the stack
+    let xmin = pts[0].x, xmax = pts[0].x, ymin = pts[0].y, ymax = pts[0].y;
+    for (let i = 1; i < pts.length; i++) { const p = pts[i]; if (p.x < xmin) xmin = p.x; if (p.x > xmax) xmax = p.x; if (p.y < ymin) ymin = p.y; if (p.y > ymax) ymax = p.y; }
     (cfg.bands || []).forEach((b) => { if (b.axis === "y") { ymin = Math.min(ymin, b.from); ymax = Math.max(ymax, b.to); } });
     if (cfg.marker && cfg.marker.y != null) { ymin = Math.min(ymin, cfg.marker.y); ymax = Math.max(ymax, cfg.marker.y); }
     if (cfg.zeroY !== false) ymin = Math.min(ymin, 0);
