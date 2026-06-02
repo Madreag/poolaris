@@ -268,7 +268,7 @@
       const x = padL + i * bw + bw * 0.18, bwi = bw * 0.64;
       const h = (v) => (v / maxFC) * plotH;
       const hot = markCya != null && Math.abs(r.cya - markCya) <= 10;
-      bars += `${hot ? `<rect x="${x - 5}" y="${yb - h(r.slam) - 6}" width="${bwi + 10}" height="${h(r.slam) + 6}" rx="7" fill="#15aabf" fill-opacity=".14" stroke="#15aabf" stroke-width="1.5"/>` : ""}
+      bars += `${hot ? `<rect x="${x - 7}" y="${padT - 2}" width="${bwi + 14}" height="${yb - padT + 2}" rx="8" fill="#15aabf" fill-opacity=".10"/>` : ""}
         <rect x="${x}" y="${yb - h(r.slam)}" width="${bwi}" height="${h(r.slam)}" rx="3" fill="#ffd8cc"/>
         <rect x="${x}" y="${yb - h(r.tgt)}" width="${bwi}" height="${h(r.tgt)}" rx="3" fill="url(#g-good)"/>
         <rect x="${x}" y="${yb - h(r.min)}" width="${bwi}" height="${h(r.min)}" rx="3" fill="#0e7da8"/>

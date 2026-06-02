@@ -277,6 +277,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header(
                 "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
             )
+        # Static assets (js/css/html/sw) must always revalidate so a code update is picked up on
+        # the next load instead of serving a stale cached app.js. (API responses already send
+        # no-store via _json.) This is what makes edits show up without a hard-refresh.
+        if not self.path.startswith("/api"):
+            self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
     def _read_json(self):

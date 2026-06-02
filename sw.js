@@ -1,7 +1,7 @@
 /* Poolaris service worker — offline app shell.
    Network-first for same-origin GETs (so updates flow), cache fallback when offline.
    /api/* is never cached; cross-origin (Open-Meteo) always hits the network. */
-const CACHE = "poolaris-v1";
+const CACHE = "poolaris-v2";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "icon.svg",
   "js/data.js", "js/svg.js", "js/calc.js", "js/charts.js", "js/api.js",
