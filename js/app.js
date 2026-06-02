@@ -1106,6 +1106,15 @@
         <h1>Log today's test</h1>
         <p class="lead">Enter the numbers from your test kit below — leave blank anything you didn't measure. Each save updates your dashboard, plan &amp; trends. The green hints show the healthy range for each.</p>
       </div>
+      ${!editR && state.log && state.log.length ? `<div class="card pad-lg" style="margin-bottom:18px">
+        <div class="card__title">${S.icon("beaker")} Quick log <span class="muted" style="font-weight:400;font-size:.86rem">— just today's chlorine &amp; pH</span></div>
+        <div class="flex wrap" style="gap:14px;align-items:flex-end;margin-top:8px">
+          <div class="field" style="margin:0;min-width:150px"><label>Free Chlorine</label><div class="input-group"><input class="input" type="number" step="any" inputmode="decimal" id="q-fc" aria-label="Free Chlorine" placeholder="${r.fc != null ? "last: " + r.fc : "e.g. 5"}"><span class="input-suffix">ppm</span></div></div>
+          <div class="field" style="margin:0;min-width:120px"><label>pH</label><input class="input" type="number" step="0.1" inputmode="decimal" id="q-ph" aria-label="pH" placeholder="${r.ph != null ? "last: " + r.ph : "e.g. 7.6"}"></div>
+          <button type="button" class="btn btn--primary" id="q-save">${S.icon("check")} Quick save</button>
+        </div>
+        <div class="hint" style="margin-top:8px">Logs FC/pH and carries everything else forward — for a complete test use the full form below.</div>
+      </div>` : ""}
       ${sectionHead(1, "Enter your readings", "Only the ones you tested. CYA &amp; FC matter most.", "beaker")}
       <div class="grid cols-2" style="align-items:start;gap:22px">
         <div class="card pad-lg">
@@ -1383,6 +1392,14 @@
     }));
     $("#cancelEdit") && $("#cancelEdit").addEventListener("click", () => { editingIndex = null; RENDER.log(); });
     $("#exportCsv") && $("#exportCsv").addEventListener("click", exportCsv);
+    const _qs = $("#q-save");
+    if (_qs) _qs.addEventListener("click", () => {
+      const qfc = $("#q-fc"), qph = $("#q-ph");
+      if ((!qfc || qfc.value === "") && (!qph || qph.value === "")) { toast("Enter FC or pH to quick-log.", "warn"); return; }
+      if (qfc && qfc.value !== "" && $("#log-fc")) $("#log-fc").value = qfc.value;
+      if (qph && qph.value !== "" && $("#log-ph")) $("#log-ph").value = qph.value;
+      const f = $("#logForm"); if (f) { f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true })); }
+    });
     $("#prefillLast") && $("#prefillLast").addEventListener("click", () => {
       const L = latest();
       ["fc", "cc", "ph", "ta", "ch", "cya", "salt"].forEach((k) => { const i = $("#log-" + k); if (i) i.value = (L[k] != null ? L[k] : ""); });
