@@ -2788,10 +2788,51 @@
   let _alertPoll = null;
   let _alertSummary = { urgent: 0, watch: 0, info: 0, total: 0 };
 
+  /* ---- reminders: browser notifications from the 24/7 engine's alerts ----
+     Within the no-dependency constraint we can't do VAPID web-push (the stdlib
+     server can't sign/encrypt push payloads), so delivery is: (a) instant while
+     a tab is open, and (b) best-effort in the background via Periodic Background
+     Sync for an installed PWA (Chromium). The SW handles the background path. */
+  const NOTIFY_OK = typeof Notification !== "undefined";
+  function remindersOn() { return NOTIFY_OK && !!(state.ui && state.ui.notify) && Notification.permission === "granted"; }
+  function enableReminders() {
+    if (!NOTIFY_OK) { toast("This browser can't show notifications.", "warn"); return; }
+    if (Notification.permission === "denied") { toast("Notifications are blocked — turn them on in your browser's site settings.", "warn"); return; }
+    Notification.requestPermission().then((p) => {
+      state.ui = state.ui || {};
+      if (p === "granted") { state.ui.notify = true; saveLocal(); registerPeriodicAlerts(); refreshAlertBadge(); toast("Reminders on — I'll ping you about anything urgent.", "good"); }
+      else { state.ui.notify = false; saveLocal(); toast("Reminders not enabled.", "info"); }
+      const b = $("#acNotify"); if (b) b.textContent = remindersOn() ? "🔔 Reminders on" : "🔔 Turn on reminders";
+    });
+  }
+  function disableReminders() { state.ui = state.ui || {}; state.ui.notify = false; saveLocal(); toast("Reminders off.", "info"); }
+  function registerPeriodicAlerts() {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready.then((reg) => { if (reg.periodicSync) reg.periodicSync.register("poolaris-alerts", { minInterval: 6 * 3600 * 1000 }).catch(() => {}); }).catch(() => {});
+  }
+  function _notified() { try { return JSON.parse(localStorage.getItem("poolaris.notified") || "[]"); } catch (e) { return []; } }
+  function _markNotified(ids) { try { localStorage.setItem("poolaris.notified", JSON.stringify(_notified().concat(ids).slice(-60))); } catch (e) {} }
+  function maybeNotifyAlerts(summary) {
+    if (!remindersOn() || !summary || (summary.urgent + summary.watch) === 0) return;
+    const multi = portal.pools && portal.pools.length > 1;
+    API.alerts(multi ? null : (portal.pool && portal.pool.id)).then((d) => {
+      const seen = _notified();
+      const fresh = ((d && d.alerts) || []).filter((a) => (a.severity === "urgent" || a.severity === "watch") && seen.indexOf(a.id) < 0);
+      if (!fresh.length) return;
+      const fire = (reg) => fresh.slice(0, 3).forEach((a) => {
+        const opts = { body: a.recommend || a.detail || "", tag: "poolaris-" + a.id, icon: "icon.svg", badge: "icon.svg", data: { alertId: a.id } };
+        if (reg && reg.showNotification) reg.showNotification("🏊 " + a.title, opts); else { try { new Notification("🏊 " + a.title, opts); } catch (e) {} }
+      });
+      if ("serviceWorker" in navigator) navigator.serviceWorker.ready.then(fire).catch(() => fire(null)); else fire(null);
+      _markNotified(fresh.map((a) => a.id));
+    }).catch(() => {});
+  }
+
   function startAlertPolling() {
     if (portal.mode !== "account" || !window.API) return;
     const bell = $("#btnAlerts"); if (bell) { bell.hidden = false; if (!bell._wired) { bell._wired = true; bell.addEventListener("click", openAlertCenter); } }
     refreshAlertBadge();
+    if (remindersOn()) registerPeriodicAlerts();
     clearInterval(_alertPoll);
     _alertPoll = setInterval(() => { if (!document.hidden) refreshAlertBadge(); }, 60000); // 60s
   }
@@ -2801,6 +2842,7 @@
     API.alertsSummary().then((s) => {
       if (!s || !s.ok) return;
       _alertSummary = s;
+      maybeNotifyAlerts(s);
       const badge = $("#alertBadge"); if (!badge) return;
       if (s.total > 0) {
         badge.hidden = false;
@@ -2819,9 +2861,10 @@
     const layer = $("#modalLayer"); if (!layer) return;
     layer.hidden = false; layer.className = "overlay is-open";
     layer.innerHTML = `<div class="sheet alert-center" role="dialog" aria-modal="true" aria-label="Alerts">
-      <div class="sheet__head"><h2>${S.icon("clock")} Watching your pool 24/7</h2><button class="iconbtn" id="acClose" aria-label="Close">${S.icon("close")}</button></div>
+      <div class="sheet__head"><h2>${S.icon("clock")} Watching your pool 24/7</h2><div class="flex" style="gap:8px;align-items:center">${NOTIFY_OK ? `<button class="btn btn--ghost btn--sm" id="acNotify">${Notification.permission === "denied" ? "🔔 Blocked" : remindersOn() ? "🔔 Reminders on" : "🔔 Turn on reminders"}</button>` : ""}<button class="iconbtn" id="acClose" aria-label="Close">${S.icon("close")}</button></div></div>
       <div class="sheet__body" id="acBody"><p class="muted">Loading…</p></div></div>`;
     $("#acClose").addEventListener("click", closeAlertCenter);
+    const _nb = $("#acNotify"); if (_nb) _nb.addEventListener("click", () => { if (remindersOn()) { disableReminders(); _nb.textContent = "🔔 Turn on reminders"; } else { enableReminders(); } });
     layer.addEventListener("click", (e) => { if (e.target === layer) closeAlertCenter(); });
     const onKey = (e) => { if (e.key === "Escape") closeAlertCenter(); };
     document.addEventListener("keydown", onKey); layer._acKey = onKey;

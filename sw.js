@@ -1,7 +1,7 @@
 /* Poolaris service worker — offline app shell.
    Network-first for same-origin GETs (so updates flow), cache fallback when offline.
    /api/* is never cached; cross-origin (Open-Meteo) always hits the network. */
-const CACHE = "poolaris-v3";
+const CACHE = "poolaris-v4";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "icon.svg",
   "js/data.js", "js/svg.js", "js/calc.js", "js/charts.js", "js/api.js",
@@ -36,5 +36,35 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() => caches.match(req).then((m) => m || caches.match("index.html")))
+  );
+});
+
+// Tapping a reminder focuses an open tab, or opens the app.
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((cs) => {
+      for (const c of cs) { if ("focus" in c) return c.focus(); }
+      if (self.clients.openWindow) return self.clients.openWindow("./");
+    })
+  );
+});
+
+// Best-effort background reminders for an installed PWA (Chromium): periodically
+// check the 24/7 engine's alert summary and notify if anything is urgent.
+self.addEventListener("periodicsync", (e) => {
+  if (e.tag !== "poolaris-alerts") return;
+  e.waitUntil(
+    fetch("api/alerts/summary", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (s && s.ok && s.urgent > 0) {
+          return self.registration.showNotification("🏊 Poolaris", {
+            body: s.urgent + " urgent pool alert" + (s.urgent === 1 ? "" : "s") + " need attention.",
+            tag: "poolaris-periodic", icon: "icon.svg", badge: "icon.svg",
+          });
+        }
+      })
+      .catch(() => {})
   );
 });
