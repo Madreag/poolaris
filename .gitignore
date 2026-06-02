@@ -22,11 +22,9 @@ env/
 docs/
 
 # --- Dev & test artifacts --------------------------------------------------
-__auditshots/
-__testserver.sh
-__*.js
-__*.png
-__*.html
+# Everything prefixed with __ is local scratch (audit harnesses, detail logs,
+# screenshots, the throwaway Edge profile, the test-server launcher) — never committed.
+__*
 *.tmp
 
 # --- Logs ------------------------------------------------------------------

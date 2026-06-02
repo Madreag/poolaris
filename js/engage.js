@@ -114,6 +114,12 @@
     if (!h || h.state !== "good" || h.total < 4) return false;
     // require CSI sane too when known
     if (h.csi != null && Math.abs(h.csi) > 0.5) return false;
+    // Single source of truth: only "perfect" when the to-do list is truly empty (no now/soon/tune
+    // actions), so the celebration can never fire while the dashboard still shows "Dial in to 100%".
+    try {
+      const pl = window.CALC.plan(ctx.profile || {}, ctx.latest || {});
+      if (pl.actions.some((a) => a.prio === "now" || a.prio === "soon" || a.prio === "tune")) return false;
+    } catch (e) { /* CALC unavailable → fall back to the health-state check above */ }
     return true;
   }
 

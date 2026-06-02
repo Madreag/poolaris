@@ -205,12 +205,18 @@ def csi(r, temp_f=None):
     if r.get("ph") is None or r.get("ch") is None or r.get("ta") is None:
         return None
     temp_f = 82 if temp_f is None else temp_f
-    ph = float(r["ph"])
-    ch = float(r["ch"])
-    ta = float(r["ta"])
-    cya = float(r.get("cya") or 0)
-    borate = float(r.get("borate") or 0)
-    salt = float(r["salt"]) if r.get("salt") is not None else 1000.0
+    try:
+        ph = float(r["ph"])
+        ch = float(r["ch"])
+        ta = float(r["ta"])
+        cya = float(r.get("cya") or 0)
+        borate = float(r.get("borate") or 0)
+        salt = float(r["salt"]) if r.get("salt") is not None else 1000.0
+    except (TypeError, ValueError):
+        return None
+    # CSI is undefined without positive, real pH/CH/TA — mirror of calc.js (log10(<=0) is invalid).
+    if not (ph > 0) or not (ch > 0) or not (ta > 0):
+        return None
     carb_alk = max(
         1.0,
         ta

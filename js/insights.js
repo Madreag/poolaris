@@ -148,10 +148,13 @@
       const v = k === "csi" ? csiVal : r[k];
       const cls = C.classify(k, v, profile, r);
       if (cls === "unknown") return;
-      const w = weights[k] || 1; wSum += w; total++;
+      const w = weights[k] || 1; wSum += w;
       const partial = cls === "good" ? 1 : cls === "warn" ? 0.5 : 0;
-      wGood += w * partial; if (cls === "good") good++;
+      wGood += w * partial;
       worst = Math.max(worst, rank[cls] || 0);
+      // CSI shapes the score & state but is NOT one of the visible tiles, so it is
+      // excluded from the X/Y "numbers ideal" count — that count must match the grid.
+      if (k !== "csi") { total++; if (cls === "good") good++; }
     });
     const score = wSum ? Math.round((wGood / wSum) * 100) : null;
     // trend: in-range share of last 3 vs prior 3 readings

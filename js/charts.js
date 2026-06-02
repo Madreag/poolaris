@@ -207,15 +207,19 @@
     const items = cfg.items || [];
     const W = 560, H = cfg.height || 190, pL = 40, pR = 14, pT = 20, pB = 40;
     if (!items.length) return `<svg viewBox="0 0 ${W} ${H}" xmlns="${NS}"></svg>`;
-    const max = Math.max.apply(null, items.map((i) => i.value)) || 1;
+    // Never let a non-finite value (e.g. a dose computed before volume is known) reach an SVG
+    // coordinate — coerce to 0 so the chart degrades gracefully instead of emitting y="NaN".
+    const val = (v) => (Number.isFinite(+v) ? +v : 0);
+    const max = Math.max.apply(null, items.map((i) => val(i.value))) || 1;
     const bw = (W - pL - pR) / items.length;
     const fmtV = cfg.fmtV || ((v) => Math.round(v * 10) / 10);
     let out = "";
     items.forEach((it, i) => {
-      const x = pL + i * bw + bw * 0.18, w = bw * 0.64, h = (it.value / (max * 1.12)) * (H - pT - pB), y = H - pB - h;
+      const v = val(it.value);
+      const x = pL + i * bw + bw * 0.18, w = bw * 0.64, h = (v / (max * 1.12)) * (H - pT - pB), y = H - pB - h;
       const col = it.color || (i === cfg.highlight ? "#15aabf" : "#9ec5d6");
       out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${col}"/>
-        <text x="${x + w / 2}" y="${y - 6}" text-anchor="middle" font-size="11" font-weight="800" fill="${i === cfg.highlight ? "#0e7da8" : "var(--svg-muted)"}">${fmtV(it.value)}</text>
+        <text x="${x + w / 2}" y="${y - 6}" text-anchor="middle" font-size="11" font-weight="800" fill="${i === cfg.highlight ? "#0e7da8" : "var(--svg-muted)"}">${fmtV(v)}</text>
         <text x="${x + w / 2}" y="${H - pB + 16}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--svg-muted)">${it.label}</text>`;
     });
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="${NS}" font-family="Segoe UI,Arial">

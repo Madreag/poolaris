@@ -450,17 +450,20 @@ button { font-family: inherit; }
 }
 .action[data-prio="now"]   { border-left-color: var(--crit); }
 .action[data-prio="soon"]  { border-left-color: var(--warn-2); }
+.action[data-prio="tune"]  { border-left-color: var(--good-2); }
 .action[data-prio="ok"]    { border-left-color: var(--good-2); }
 .action[data-prio="info"]  { border-left-color: var(--aqua); }
 .action__num { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 800; background: var(--foam); color: var(--deep-2); }
 .action[data-prio="now"]  .action__num { background: var(--crit-bg); color: var(--crit); }
 .action[data-prio="soon"] .action__num { background: var(--warn-bg); color: var(--warn); }
+.action[data-prio="tune"] .action__num { background: var(--good-bg); color: var(--good); }
 .action[data-prio="ok"]   .action__num { background: var(--good-bg); color: var(--good); }
 .action__body { flex: 1; min-width: 0; }
 .action__title { font-weight: 750; margin-bottom: 3px; }
 .timing { font-size: .64rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; vertical-align: middle; margin-left: 6px; white-space: nowrap; }
 .timing--now { background: var(--crit-bg); color: var(--crit); }
 .timing--soon { background: var(--warn-bg); color: var(--warn); }
+.timing--tune { background: var(--good-bg); color: var(--good); }
 .timing--info { background: var(--line-2); color: var(--ink-3); }
 .action__why { font-size: .9rem; color: var(--ink-3); }
 .action__dose { margin-top: 9px; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px; border-radius: 11px; background: var(--foam-2); border: 1px dashed var(--aqua-2); }

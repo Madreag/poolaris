@@ -210,6 +210,9 @@
     if (r.ph == null || r.ch == null || r.ta == null) return null;
     tempF = tempF == null ? 82 : tempF;
     const ph = +r.ph, ch = +r.ch, ta = +r.ta, cya = +r.cya || 0, borate = +r.borate || 0;
+    // CSI is undefined without positive, real pH/CH/TA — log10(≤0) is -Infinity/NaN and must
+    // never leak into the plan. (A 0/blank/garbage entry returns null, i.e. "can't compute".)
+    if (!(ph > 0) || !(ch > 0) || !(ta > 0)) return null;
     const salt = r.salt != null ? +r.salt : 1000; // non-salt pools still carry dissolved solids
     const carbAlk = Math.max(1, ta - (0.38772 * cya) / (1 + Math.pow(10, 6.83 - ph)) - (4.63 * borate) / (1 + Math.pow(10, 9.11 - ph)));
     const extraNaCl = Math.max(0, salt - 1.1678 * ch);
@@ -302,6 +305,8 @@
           why: `CYA is ${r.cya} — below the ${cyaIdeal[0]}–${cyaIdeal[1]} range, so the sun is burning your chlorine off fast.`,
           dose: { text: `${fmtLb(add / 16)} of stabilizer`, sub: "add via a sock in the skimmer; dissolves over ~a week — don't backwash for a few days" },
         });
+      } else if (r.cya > cyaIdeal[1]) {
+        actions.push({ prio: "tune", key: "cya", title: "CYA is a touch high", why: `CYA is ${r.cya} — just above the ${cyaIdeal[0]}–${cyaIdeal[1]} ideal${swg ? " for a salt pool" : ""}. It drifts down with normal water changes; avoid trichlor tabs/pucks (they add more CYA).`, dose: null });
       }
     } else {
       actions.push({ prio: "soon", key: "cya", title: "Test your CYA", why: "CYA sets every chlorine target — it's the most important number to know.", dose: null });
@@ -333,7 +338,7 @@
           dose: { text: `${fmtGal(g)} of ${pct}% liquid chlorine`, sub: `${jugs(g) ? jugs(g) + " · " : ""}dose after sunset so the sun doesn't waste it` },
         });
       } else if (r.fc > fcT.slam) {
-        actions.push({ prio: "info", key: "fc", title: "FC is very high — just wait", why: `FC ${r.fc} is above SLAM level. It's not dangerous; let it drift down before swimming (FC ≤ your CYA-based limit).`, dose: null });
+        actions.push({ prio: "tune", key: "fc", title: "FC is very high — let it drift down", why: `FC ${r.fc} is above your SLAM level. Not dangerous, but hold off on more chlorine and let it fall below ${fcT.slam} before swimming.`, dose: null });
       }
     } else {
       actions.push({ prio: "soon", key: "fc", title: "Test your Free Chlorine", why: "FC is your active sanitizer — test it every couple of days (daily in peak summer).", dose: null });
@@ -345,14 +350,14 @@
       if (r.ph > D.RANGES.ph.ideal[1]) {           // above the 7.5–7.8 ideal band
         if (fcInterferes) {
           actions.push({
-            prio: "info", key: "ph", title: "Re-check pH once FC comes down",
+            prio: "tune", key: "ph", title: "Re-check pH once FC comes down",
             why: `pH reads ${r.ph}, but with FC at ${r.fc} the pH test runs falsely high — hold off on acid. Re-test pH after FC drops below ~10, then dose if it's still high.`,
             dose: null,
           });
         } else {
           const acid = acidForPH(r.ph, 7.6, r.ta || 80, vol, acidPct);
           actions.push({
-            prio: r.ph >= D.RANGES.ph.ok[1] ? "soon" : "info", key: "ph", title: "Bring pH down",
+            prio: r.ph >= D.RANGES.ph.ok[1] ? "soon" : "tune", key: "ph", title: "Bring pH down",
             why: `pH is ${r.ph} (ideal 7.5–7.8). High pH dulls chlorine and invites scale.`,
             dose: acid ? { text: `${fmtFlOz(acid.flOz)} of ${acidPct}% muriatic acid`, sub: `targets pH 7.6 (also drops TA ~${acid.taDrop}). Add ¾ first, circulate, retest.` } : null,
           });
@@ -360,6 +365,8 @@
       } else if (r.ph < D.RANGES.ph.ok[0]) {
         const boraxOz = ((7.6 - r.ph) / 0.1) * D.DOSE.boraxOzPer01PHper10k * (vol / 10000);
         actions.push({ prio: "soon", key: "ph", title: "Raise pH", why: `pH is ${r.ph} — low pH is corrosive to plaster &amp; metal.`, dose: { text: `Aerate (free) — or ~${fmtLb(boraxOz / 16)} of borax`, sub: "point returns up / run a fountain to raise pH for free in 1–3 days; borax is the fast option" } });
+      } else if (r.ph < D.RANGES.ph.ideal[0]) {
+        actions.push({ prio: "tune", key: "ph", title: "Nudge pH up a little", why: `pH is ${r.ph} — fine, but below the 7.5–7.8 sweet spot. Aerate (point returns up / run a fountain) to raise it for free, or add a little borax.`, dose: null });
       }
     }
 
@@ -367,9 +374,11 @@
     if (has(r.ta)) {
       if (r.ta < D.RANGES.ta.ideal[0]) {
         const add = bakingSodaForTA(D.RANGES.ta.ideal[0] + 10 - r.ta, vol);
-        actions.push({ prio: "info", key: "ta", title: "Nudge TA up", why: `TA is ${r.ta} — a little low. TA buffers your pH.`, dose: { text: `${fmtLb(add)} of baking soda`, sub: "raises TA toward 60–80" } });
+        actions.push({ prio: r.ta < D.RANGES.ta.ok[0] ? "soon" : "tune", key: "ta", title: "Nudge TA up", why: `TA is ${r.ta} — ${r.ta < D.RANGES.ta.ok[0] ? "low" : "a little low"}. TA buffers your pH against swings.`, dose: { text: `${fmtLb(add)} of baking soda`, sub: "raises TA toward 60–80" } });
       } else if (r.ta > D.RANGES.ta.ok[1]) {
-        actions.push({ prio: "info", key: "ta", title: "Lower TA (acid + aeration)", why: `TA is ${r.ta} — high TA makes pH climb constantly. Lower pH to ~7.2 with acid, then aerate to bring pH back up while TA stays down. Repeat.`, dose: null });
+        actions.push({ prio: "soon", key: "ta", title: "Lower TA (acid + aeration)", why: `TA is ${r.ta} — high TA makes pH climb constantly. Lower pH to ~7.2 with acid, then aerate to bring pH back up while TA stays down. Repeat.`, dose: null });
+      } else if (r.ta > D.RANGES.ta.ideal[1]) {
+        actions.push({ prio: "tune", key: "ta", title: "Ease TA down (optional)", why: `TA is ${r.ta} — acceptable, but above the 50–90 ideal, so pH may creep up. Optional: drop pH to ~7.2 with acid, then aerate back up to nudge TA toward 80.`, dose: null });
       }
     }
 
@@ -380,7 +389,9 @@
         const add = calciumForCH(D.RANGES.ch.ideal[0] + 20 - r.ch, vol);
         actions.push({ prio: "soon", key: "ch", title: "Add calcium", why: `CH is ${r.ch} — low calcium can dissolve plaster &amp; grout.`, dose: { text: `${fmtLb(add)} of calcium chloride`, sub: "dissolve in a bucket first; add slowly" } });
       } else if (r.ch > D.RANGES.ch.ok[1]) {
-        actions.push({ prio: "info", key: "ch", title: "High calcium — manage with CSI", why: `CH is ${r.ch}. You can't remove calcium cheaply (hard tap re-adds it). Instead keep pH &amp; TA on the low side so the water doesn't scale, or use a mobile RO service.`, dose: null });
+        actions.push({ prio: "soon", key: "ch", title: "High calcium — keep it from scaling", why: `CH is ${r.ch}. You can't remove calcium cheaply (hard tap re-adds it). Keep pH &amp; TA on the low side so the water doesn't scale, or use a mobile RO service.`, dose: null });
+      } else if (r.ch > D.RANGES.ch.ideal[1]) {
+        actions.push({ prio: "tune", key: "ch", title: "Watch calcium (slightly high)", why: `CH is ${r.ch} — acceptable, but above the 250–450 ideal. Keep pH/TA toward the low end so CSI stays balanced and it doesn't scale.`, dose: null });
       }
     }
 
@@ -389,26 +400,55 @@
     if (csiVal != null) {
       if (csiVal > D.RANGES.csi.ok[1]) actions.push({ prio: "soon", key: "csi", title: "Water is scaling (CSI high)", why: `CSI is +${csiVal}. Expect cloudiness &amp; crust. Lower pH and TA to bring it toward 0.`, dose: null, chart: { type: "csi", val: csiVal } });
       else if (csiVal < D.RANGES.csi.ok[0]) actions.push({ prio: "soon", key: "csi", title: "Water is corrosive (CSI low)", why: `CSI is ${csiVal}. It can etch plaster &amp; corrode metal. Raise pH, TA, or CH toward balance.`, dose: null, chart: { type: "csi", val: csiVal } });
+      else if (classify("csi", csiVal, profile) === "warn") actions.push({ prio: "tune", key: "csi", title: "Balance is drifting (CSI)", why: `CSI is ${csiVal > 0 ? "+" : ""}${csiVal} — close to balanced but not centered. Nudge pH/TA toward the middle to bring it near 0.`, dose: null, chart: { type: "csi", val: csiVal } });
     }
 
     // ---- salt (SWG) ----
     if (swg && has(r.salt)) {
       if (r.salt < D.RANGES.salt.ideal[0]) {
         const add = saltToRaise(D.RANGES.salt.ideal[0] + 100 - r.salt, vol);
-        actions.push({ prio: "soon", key: "salt", title: "Add salt", why: `Salt is ${r.salt} — your generator needs more to make chlorine.`, dose: { text: `${fmtLb(add)} of pool salt`, sub: "dissolves over a few hours with the pump running" } });
+        actions.push({ prio: r.salt < D.RANGES.salt.ok[0] ? "soon" : "tune", key: "salt", title: "Add salt", why: `Salt is ${r.salt} — ${r.salt < D.RANGES.salt.ok[0] ? "your generator needs more to make chlorine" : "a touch below the 3000–3400 ideal; top it up so the cell runs in its sweet spot"}.`, dose: { text: `${fmtLb(add)} of pool salt`, sub: "dissolves over a few hours with the pump running" } });
+      } else if (r.salt > D.RANGES.salt.ok[1]) {
+        actions.push({ prio: "soon", key: "salt", title: "Salt is high — dilute a little", why: `Salt is ${r.salt} — above the cell's range; too much can trip a "high salt" fault and corrode metal. Replace some water to bring it toward 3200.`, dose: null });
+      } else if (r.salt > D.RANGES.salt.ideal[1]) {
+        actions.push({ prio: "tune", key: "salt", title: "Salt is a touch high", why: `Salt is ${r.salt} — just above the 3000–3400 ideal. No action needed; it'll fall with normal water changes.`, dose: null });
       }
     }
 
-    // ---- nothing urgent? ----
-    if (actions.filter((a) => a.prio === "now" || a.prio === "soon").length === 0) {
-      const allIdeal = ["fc", "cc", "ph", "ta", "cya"].every((k) => has(r[k]) ? classify(k, r[k], profile, r) === "good" : true);
-      actions.unshift(allIdeal
-        ? { prio: "ok", key: "ok", title: "Your water is dialed in 🎉", why: "Every key number is in its ideal range. Keep testing every couple of days and top up chlorine as it's used.", dose: null }
-        : { prio: "ok", key: "ok", title: "Nothing urgent — you're in good shape", why: "No must-do actions right now. Anything below is optional fine-tuning. Keep FC topped up and re-test in a couple of days.", dose: null });
+    // ---- safety net: every acceptable-but-not-ideal number gets a concrete tweak ----
+    // Guarantees the core invariant: health < 100% ALWAYS comes with a to-do, and an empty
+    // to-do list ALWAYS means every number is ideal. Catches anything the branches above
+    // didn't already cover (e.g. a trace of CC, or a value sitting in the warn band).
+    const PN = { fc: "Free Chlorine", cc: "Combined Chlorine", ph: "pH", ta: "Alkalinity", ch: "Calcium (CH)", cya: "CYA", salt: "Salt" };
+    const tuneHint = {
+      fc: "let it settle into your target band", cc: "a trace usually clears on its own — keep FC at target",
+      ph: "nudge it into 7.5–7.8", ta: "ease it toward 50–90", ch: "keep it toward 250–450",
+      cya: swg ? "aim for 60–80" : "aim for 30–50", salt: "trim toward 3000–3400",
+    };
+    const visKeys = ["fc", "cc", "ph", "ta", "cya"].concat(chMatters ? ["ch"] : []).concat(swg ? ["salt"] : []);
+    visKeys.forEach((k) => {
+      if (!has(r[k]) || actions.some((a) => a.key === k)) return;
+      if (classify(k, r[k], profile, r) === "warn") {
+        actions.push({ prio: "tune", key: k, title: `Dial in ${PN[k]}`, why: `${PN[k]} is ${r[k]} — acceptable, but not yet ideal. To reach 100%, ${tuneHint[k]}.`, dose: null });
+      }
+    });
+
+    // Any visible balance number we don't have yet → one gentle "log these" card, so a pool is
+    // never called "dialed in 🎉" while tiles are still blank. (fc & cya already prompt above;
+    // cc is excluded — an unmeasured CC is conventionally treated as 0, not a gap to chase.)
+    const missing = visKeys.filter((k) => k !== "cc" && !has(r[k]) && !actions.some((a) => a.key === k));
+    if (missing.length) {
+      actions.push({ prio: "tune", key: "untested", title: `Log your ${missing.map((k) => PN[k]).join(", ")}`, why: "These haven't been measured yet — log them so your plan and health score cover every number.", dose: null });
     }
 
-    // order
-    const order = { now: 0, soon: 1, ok: 2, info: 3 };
+    // ---- nothing left to do? (only when there are no now/soon/tune actions) ----
+    const hasToDo = actions.some((a) => a.prio === "now" || a.prio === "soon" || a.prio === "tune");
+    if (!hasToDo) {
+      actions.unshift({ prio: "ok", key: "ok", title: "Your water is dialed in 🎉", why: "Every number is in its ideal range and your balance (CSI) is centered. Keep testing every couple of days and top up chlorine as it's used.", dose: null });
+    }
+
+    // order — 'tune' (the optional path to 100%) sits below the must-dos but above info
+    const order = { now: 0, soon: 1, tune: 2, ok: 3, info: 4 };
     actions.sort((a, b) => order[a.prio] - order[b.prio]);
     return { actions, fcTargets: fcT, csi: csiVal };
   }
@@ -481,7 +521,7 @@
     if (lb < 1) { const oz = lb * 16; return (Math.round(oz * 2) / 2) + " oz"; }
     return (Math.round(lb * 10) / 10) + " lb";
   }
-  function fmtVolume(g) { return g >= 1000 ? Math.round(g / 100) / 10 + "k gal" : Math.round(g) + " gal"; }
+  function fmtVolume(g) { if (!(+g > 0)) return "—"; g = +g; return g >= 1000 ? Math.round(g / 100) / 10 + "k gal" : Math.round(g) + " gal"; }
   // retail "buy this many" hint for liquid chlorine
   function jugs(gal) {
     if (!gal || gal <= 0.05) return "";

@@ -788,9 +788,13 @@
     const v = $("#view-dashboard");
     const h = IN.health(p, state.log || []);
     const pl = C.plan(p, r);
-    const topActions = pl.actions.filter((a) => a.prio === "now" || a.prio === "soon").slice(0, 3);
-    const okState = topActions.length === 0;
-    const perfect = okState && h.state === "good";
+    const mustActions = pl.actions.filter((a) => a.prio === "now" || a.prio === "soon");
+    const tuneActions = pl.actions.filter((a) => a.prio === "tune");
+    // "Do this now" shows the must-dos if there are any, otherwise the optional path-to-100% tweaks.
+    const topActions = (mustActions.length ? mustActions : tuneActions).slice(0, 4);
+    const okState = mustActions.length === 0;                 // nothing urgent
+    const dialedIn = okState && tuneActions.length === 0;     // plan() emitted the 🎉 "dialed in" card
+    const perfect = dialedIn && h.state === "good";           // every number ideal AND CSI centered
     // No real test logged yet → the numbers shown are setup estimates, not measured data.
     const noRealTest = !(state.log && state.log.length);
     const fcT = pl.fcTargets;
@@ -854,13 +858,18 @@
       ${state.slam && state.slam.active ? slamBanner() : ""}
       ${ambientBand}
 
-      ${sectionHead(1, "Do this now", "Your next moves — most urgent first. Every dose is calculated for your pool.", "plan")}
+      ${sectionHead(1,
+        mustActions.length ? "Do this now" : tuneActions.length ? "Dial in to 100%" : "You're all set",
+        mustActions.length ? "Your next moves — most urgent first. Every dose is calculated for your pool."
+          : tuneActions.length ? "Your water is healthy — these optional tweaks take it from good to a perfect 100%."
+          : "Every number is in its ideal range. Keep up your routine and re-test in a couple of days.",
+        "plan")}
       <div class="grid cols-3" style="margin-bottom:22px;align-items:start">
         <div class="do-now-main">
           <div class="stack" id="dashActions">
-            ${(okState ? [pl.actions[0]] : topActions).map((a, i) => actionCard(a, i + 1)).join("")}
+            ${(dialedIn ? [pl.actions[0]] : topActions).map((a, i) => actionCard(a, i + 1)).join("")}
           </div>
-          ${pl.actions.length > (okState ? 1 : topActions.length) ? `<a class="btn btn--ghost" href="#plan" style="margin-top:12px">See ${okState ? "optional tweaks" : "all " + pl.actions.length + " steps"} ${S.icon("arrow")}</a>` : ""}
+          ${pl.actions.length > (dialedIn ? 1 : topActions.length) ? `<a class="btn btn--ghost" href="#plan" style="margin-top:12px">See the full plan ${S.icon("arrow")}</a>` : ""}
         </div>
         <div>
           <div class="card pad-lg" style="text-align:center">
@@ -1012,7 +1021,7 @@
     let chart = "";
     if (a.chart && a.chart.type === "cyaStaircase") chart = `<div class="figure" style="margin-top:12px">${S.cyaStaircase(a.chart.start, a.chart.frac, a.chart.target)}</div>`;
     if (a.chart && a.chart.type === "csi") chart = `<div class="figure" style="margin-top:12px">${S.csiScale(a.chart.val)}</div>`;
-    const timing = { now: "Today", soon: "This week", info: "When you're ready", ok: "" }[a.prio] || "";
+    const timing = { now: "Today", soon: "This week", tune: "To 100%", info: "When you're ready", ok: "" }[a.prio] || "";
     const isSlam = a.key === "cc" || (a.title && a.title.indexOf("SLAM") > -1);
     const calcId = (a.key && a.prio !== "ok" && !isSlam) ? calcForAction(a.key, a) : null;
     // "Test your X" cards (no dose, just measure) → link straight to the log form
@@ -1134,10 +1143,10 @@
   function logInstantFeedback(p, r) {
     const pl = C.plan(p, r);
     const noReal = !(state.log && state.log.length);
-    const top = pl.actions.find((a) => a.prio === "now" || a.prio === "soon");
+    const top = pl.actions.find((a) => a.prio === "now" || a.prio === "soon" || a.prio === "tune");
     const banner = top
-      ? `<div class="callout callout--${top.prio === "now" ? "bad" : "warn"}" style="margin-bottom:14px">${S.icon(top.prio === "now" ? "warn" : "info")}<div><b>Do this first:</b> ${top.title}${top.dose ? ` — <b>${top.dose.text}</b>` : ""}</div></div>`
-      : `<div class="callout callout--good" style="margin-bottom:14px">${S.icon("check")}<div><b>Nothing urgent</b> — your water's in good shape. Keep testing every couple of days.</div></div>`;
+      ? `<div class="callout callout--${top.prio === "now" ? "bad" : top.prio === "tune" ? "info" : "warn"}" style="margin-bottom:14px">${S.icon(top.prio === "now" ? "warn" : "info")}<div><b>${top.prio === "tune" ? "To reach 100%" : "Do this first"}:</b> ${top.title}${top.dose ? ` — <b>${top.dose.text}</b>` : ""}</div></div>`
+      : `<div class="callout callout--good" style="margin-bottom:14px">${S.icon("check")}<div><b>Dialed in 🎉</b> — every number is in its ideal range. Keep testing every couple of days.</div></div>`;
     return `<div class="card__title">${S.icon("target")} Where you stand</div>
       <p class="muted" style="margin-bottom:14px">Based on your ${noReal ? "setup estimates — no test logged yet" : "latest reading"}.</p>
       ${noReal
@@ -1254,12 +1263,12 @@
     if (entered.cc != null && entered.fc != null && entered.cc > 0.5 && entered.fc >= C.fcTargets(eff.cya != null ? eff.cya : 40, p.sanitizer === "salt").min) flags.push(`CC is up even though FC is adequate — that points to an organic load or weak circulation, not too little chlorine.`);
     // synthesized "if you save this"
     const pl = C.plan(p, eff);
-    const top = pl.actions.find((a) => a.prio === "now" || a.prio === "soon");
+    const top = pl.actions.find((a) => a.prio === "now" || a.prio === "soon" || a.prio === "tune");
     const csiV = (entered.ph != null && entered.ta != null && entered.ch != null) ? C.csi(eff, entered.temp != null ? entered.temp : (p.tempF || 82)) : null;
     const fcLine = (eff.cya != null && entered.fc != null) ? (() => { const t = C.fcTargets(eff.cya, p.sanitizer === "salt"); return `<div class="muted" style="font-size:.82rem;margin-top:8px">For CYA ${eff.cya}: min ${t.min} · target ${t.targetLo}–${t.targetHi} · SLAM ${t.slam}</div>`; })() : "";
     return `<div class="card__title">${S.icon("target")} Live preview <span class="live-badge">${S.icon("beaker")} not saved yet</span></div>
       ${flags.map((f) => `<div class="callout callout--warn" style="margin-bottom:10px;font-size:.85rem">${S.icon("warn")}<div>${f}</div></div>`).join("")}
-      ${top ? `<div class="callout callout--${top.prio === "now" ? "bad" : "warn"}" style="margin-bottom:12px">${S.icon(top.prio === "now" ? "warn" : "info")}<div><b>If you save this:</b> ${top.title}${top.dose ? ` — <b>${top.dose.text}</b>` : ""}</div></div>` : `<div class="callout callout--good" style="margin-bottom:12px">${S.icon("check")}<div>Looks good — nothing urgent in what you've entered so far.</div></div>`}
+      ${top ? `<div class="callout callout--${top.prio === "now" ? "bad" : top.prio === "tune" ? "info" : "warn"}" style="margin-bottom:12px">${S.icon(top.prio === "now" ? "warn" : "info")}<div><b>If you save this:</b> ${top.title}${top.dose ? ` — <b>${top.dose.text}</b>` : ""}</div></div>` : `<div class="callout callout--good" style="margin-bottom:12px">${S.icon("check")}<div>Looks good — everything you've entered is in its ideal range.</div></div>`}
       <div class="param-grid" style="grid-template-columns:1fr 1fr">${dashParams(p, eff).join("")}</div>
       ${fcLine}
       ${csiV != null ? `<div class="muted" style="font-size:.82rem;margin-top:4px">Live CSI: ${csiV > 0 ? "+" : ""}${csiV} · ${C.classify("csi", csiV, p) === "good" ? "balanced ✓" : csiV > 0.3 ? "tending to scale" : "tending corrosive"}</div>` : ""}`;
@@ -1454,22 +1463,29 @@
   RENDER.plan = function () {
     const p = profile(); const r = latest(); const v = $("#view-plan");
     const pl = C.plan(p, r);
-    // all-clear = no must-do (now/soon) actions, only ok/info reference cards
-    const allClear = !pl.actions.some((a) => a.prio === "now" || a.prio === "soon");
+    // Three states: must-do (now/soon) → optional path-to-100% (tune only) → dialed in (neither).
+    const hasMust = pl.actions.some((a) => a.prio === "now" || a.prio === "soon");
+    const hasTune = pl.actions.some((a) => a.prio === "tune");
+    const dialedIn = !hasMust && !hasTune;   // every number ideal — nothing to do
+    const onlyTune = !hasMust && hasTune;    // healthy; optional tweaks remain to reach 100%
     v.innerHTML = `
       <div class="page-head">
         <span class="eyebrow">${S.icon("plan")} Path to Perfect</span>
-        <h1>${allClear ? "You're all caught up" : "Your step-by-step plan"}</h1>
-        <p class="lead">${allClear
+        <h1>${dialedIn ? "You're all caught up" : onlyTune ? "Almost perfect" : "Your step-by-step plan"}</h1>
+        <p class="lead">${dialedIn
           ? `Nothing needs doing right now — your water's in good shape. Keep up the easy routine below and re-test in a couple of days.`
+          : onlyTune
+          ? `No must-do steps — your water is healthy. The optional tweaks below take it from good to a perfect 100%, each calculated for <strong>your</strong> ${C.fmtVolume(p.volume)} pool.`
           : `Ordered by urgency. Do them top to bottom — each step is calculated for <strong>your</strong> ${C.fmtVolume(p.volume)} pool and the products you own. Re-test after each change.`}</p>
       </div>
-      ${allClear ? `<div class="card pad-lg center" style="margin-bottom:18px;background:var(--good-bg);border:1px solid var(--good)">
+      ${dialedIn ? `<div class="card pad-lg center" style="margin-bottom:18px;background:var(--good-bg);border:1px solid var(--good)">
         <div style="max-width:180px;margin:0 auto 6px">${S.celebrate ? S.celebrate() : S.icon("check")}</div>
         <h2 style="margin:.1em 0">Water's dialed in 🎉</h2>
         <p class="muted" style="max-width:42ch;margin:0 auto">No must-do steps today. The maintenance routine below keeps it that way.</p>
       </div>
-      ${sectionHead(1, "Easy maintenance", "Your simple keep-it-clear routine — no urgency.", "check")}` : `
+      ${sectionHead(1, "Easy maintenance", "Your simple keep-it-clear routine — no urgency.", "check")}`
+      : onlyTune ? sectionHead(1, "Optional tweaks to 100%", "Your water is already healthy — these take it the last mile. No urgency.", "target")
+      : `
       ${sectionHead(1, "Do these in order", "Top to bottom — red first, then amber. Re-test after each change.", "plan")}
       <div class="flex wrap" style="gap:14px;margin:-4px 0 14px;font-size:.82rem;color:var(--ink-3)">
         <span class="flex" style="gap:6px"><span style="width:11px;height:11px;border-radius:3px;background:var(--crit)"></span>Today — water safety</span>
@@ -1627,7 +1643,7 @@
       <div id="cc-out"></div><div id="cc-viz"></div>`;
     function upd() {
       const cur = parseFloat($("#cc-cur").value) || 0, tgt = parseFloat($("#cc-tgt").value) || 0;
-      const vol = parseFloat($("#cc-vol").value) || p.volume; const pct = ($("#cc-pct").value || "10").replace("%", "");
+      const vol = parseFloat($("#cc-vol").value) || p.volume || 14000; const pct = ($("#cc-pct").value || "10").replace("%", "");
       const cya = r.cya != null ? r.cya : 40, t = C.fcTargets(cya, p.sanitizer === "salt");
       const g = C.chlorineGallons(tgt - cur, vol, pct);
       $("#cc-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtGal(g)}</b> of ${pct}% liquid chlorine to raise FC from ${cur} to ${tgt} ppm.<br><span class="muted" style="font-size:.85rem">${C.jugs(g) ? "<b>" + C.jugs(g) + "</b> · " : ""}≈ ${Math.round(g * 128)} fl oz. Dose after sunset; circulate, then re-test.</span>`) : `<div class="callout" style="margin-top:6px">FC is already at or above your target — no chlorine needed.</div>`;
@@ -1660,7 +1676,7 @@
       <div id="cs-viz"></div>`;
     function upd() {
       const cya = parseFloat($("#cs-cya").value) || 0, fc = parseFloat($("#cs-fc").value) || 0;
-      const vol = parseFloat($("#cs-vol").value) || p.volume, pct = $("#cs-pct").value;
+      const vol = parseFloat($("#cs-vol").value) || p.volume || 14000, pct = $("#cs-pct").value;
       const t = C.fcTargets(cya, p.sanitizer === "salt");
       const g = C.chlorineGallons(t.slam - fc, vol, pct);
       $("#cs-out").innerHTML = out(`SLAM level for CYA ${cya} is <b>${t.slam} ppm FC</b>.<br>From ${fc} ppm, add <b>${C.fmtGal(g)}</b> of ${pct}% chlorine to get there now.<br><span class="muted" style="font-size:.85rem">Mustard/yellow algae? Hold the higher <b>${t.mustard} ppm</b>. Then keep re-dosing back to SLAM until the 3 exit tests pass.</span>`) +
@@ -1787,7 +1803,7 @@
         <div class="field"><label>Volume (gal)</label><input class="input" type="number" id="st-vol" value="${p.volume}"></div>
       </div><div id="st-out"></div><div id="st-viz"></div>`;
     function upd() {
-      const cur = parseFloat($("#st-cur").value) || 0, tgt = parseFloat($("#st-tgt").value) || 0, vol = parseFloat($("#st-vol").value) || p.volume;
+      const cur = parseFloat($("#st-cur").value) || 0, tgt = parseFloat($("#st-tgt").value) || 0, vol = parseFloat($("#st-vol").value) || p.volume || 14000;
       const oz = C.cyaToRaise(tgt - cur, vol);
       $("#st-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtLb(oz / 16)}</b> of granular stabilizer to raise CYA from ${cur} to ${tgt}.<br><span class="muted" style="font-size:.85rem">Put it in a sock in the skimmer basket; it dissolves over ~a week. Don't backwash for a few days.</span>`) : `<div class="callout" style="margin-top:6px">CYA already at target.</div>`;
       $("#st-viz").innerHTML = `<div class="figure" style="margin-top:8px">${CH.bars({ items: [30, 40, 50, 60, 70].map((tt) => ({ label: "→" + tt, value: Math.max(0, C.cyaToRaise(tt - cur, vol) / 16), color: tt === tgt ? "#845ef7" : "#cbb8fc" })), highlight: [30, 40, 50, 60, 70].indexOf(tgt), yLabel: "lb stabilizer", fmtV: (v) => v < 1 ? Math.round(v * 16) + "oz" : (Math.round(v * 10) / 10) + "#" })}</div><p class="muted center" style="font-size:.8rem">lb of stabilizer to reach each CYA, from your current ${cur}</p>`;
@@ -1805,7 +1821,7 @@
       <div class="callout callout--warn" style="margin-top:10px">${S.icon("info")}<div>To <strong>lower</strong> TA there's no chemical — use the acid + aeration method (see Learn).</div></div>
       <div id="ta-viz"></div>`;
     function upd() {
-      const cur = parseFloat($("#ta-cur").value) || 0, tgt = parseFloat($("#ta-tgt").value) || 0, vol = parseFloat($("#ta-vol").value) || p.volume;
+      const cur = parseFloat($("#ta-cur").value) || 0, tgt = parseFloat($("#ta-tgt").value) || 0, vol = parseFloat($("#ta-vol").value) || p.volume || 14000;
       const lb = C.bakingSodaForTA(tgt - cur, vol);
       $("#ta-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtLb(lb)}</b> of baking soda (sodium bicarbonate) to raise TA from ${cur} to ${tgt}.<br><span class="muted" style="font-size:.85rem">Broadcast over the pool with the pump running. It nudges pH up slightly too.</span>`) : `<div class="callout" style="margin-top:6px">TA already at/above target.</div>`;
       $("#ta-viz").innerHTML = `<div class="figure" style="margin-top:8px">${CH.bars({ items: [60, 70, 80, 90].map((tt) => ({ label: "→" + tt, value: Math.max(0, C.bakingSodaForTA(tt - cur, vol)), color: tt === tgt ? "#4263eb" : "#a5b4fc" })), highlight: [60, 70, 80, 90].indexOf(tgt), yLabel: "lb baking soda", fmtV: (v) => (Math.round(v * 10) / 10) + "#" })}</div><p class="muted center" style="font-size:.8rem">lb of baking soda to reach each TA, from your current ${cur}</p>`;
@@ -1823,7 +1839,7 @@
       <div class="callout" style="margin-top:10px">${S.icon("info")}<div>Can't lower calcium chemically — only by replacing water or reverse osmosis. In hard water, manage scale via <b>CSI</b> instead.</div></div>
       <div id="ch-viz"></div>`;
     function upd() {
-      const cur = parseFloat($("#ch-cur").value) || 0, tgt = parseFloat($("#ch-tgt").value) || 0, vol = parseFloat($("#ch-vol").value) || p.volume;
+      const cur = parseFloat($("#ch-cur").value) || 0, tgt = parseFloat($("#ch-tgt").value) || 0, vol = parseFloat($("#ch-vol").value) || p.volume || 14000;
       const lb = C.calciumForCH(tgt - cur, vol);
       $("#ch-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtLb(lb)}</b> of calcium chloride to raise CH from ${cur} to ${tgt}.<br><span class="muted" style="font-size:.85rem">Dissolve in a bucket of water first (it gets hot), then pour in slowly.</span>`) : `<div class="callout" style="margin-top:6px">CH already at/above target.</div>`;
       $("#ch-viz").innerHTML = `<div class="figure" style="margin-top:8px">${CH.bars({ items: [250, 300, 350, 400].map((tt) => ({ label: "→" + tt, value: Math.max(0, C.calciumForCH(tt - cur, vol)), color: tt === tgt ? "#868e96" : "#ced4da" })), highlight: [250, 300, 350, 400].indexOf(tgt), yLabel: "lb calcium chloride", fmtV: (v) => (Math.round(v * 10) / 10) + "#" })}</div><p class="muted center" style="font-size:.8rem">lb of calcium chloride to reach each CH, from your current ${cur}</p>`;
@@ -1839,7 +1855,7 @@
         <div class="field"><label>Volume (gal)</label><input class="input" type="number" id="sa-vol" value="${p.volume}"></div>
       </div><div id="sa-out"></div><div id="sa-viz"></div>`;
     function upd() {
-      const cur = parseFloat($("#sa-cur").value) || 0, tgt = parseFloat($("#sa-tgt").value) || 0, vol = parseFloat($("#sa-vol").value) || p.volume;
+      const cur = parseFloat($("#sa-cur").value) || 0, tgt = parseFloat($("#sa-tgt").value) || 0, vol = parseFloat($("#sa-vol").value) || p.volume || 14000;
       const lb = C.saltToRaise(tgt - cur, vol);
       $("#sa-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtLb(lb)}</b> of pool salt (≈ ${Math.ceil(lb / 40)} × 40-lb bags) to go from ${cur} to ${tgt} ppm.<br><span class="muted" style="font-size:.85rem">Pour across the pool, brush to dissolve, run the pump several hours before testing.</span>`) : `<div class="callout" style="margin-top:6px">Salt already at/above target. To lower it, replace water.</div>`;
       $("#sa-viz").innerHTML = `<div class="figure" style="margin-top:8px">${CH.bars({ items: [3000, 3200, 3400].map((tt) => ({ label: "→" + tt, value: Math.max(0, Math.ceil(C.saltToRaise(tt - cur, vol) / 40)), color: tt === tgt ? "#15aabf" : "#9ec5d6" })), highlight: [3000, 3200, 3400].indexOf(tgt), yLabel: "40-lb bags", fmtV: (v) => v + " bag" + (v === 1 ? "" : "s") })}</div><p class="muted center" style="font-size:.8rem">40-lb bags to reach each salt level, from your current ${cur}</p>`;
@@ -2022,7 +2038,7 @@
         <div class="field"><label>Volume (gal)</label><input class="input" type="number" id="bo-vol" value="${p.volume}"></div>
       </div><div id="bo-out"></div>`;
     function upd() {
-      const cur = parseFloat($("#bo-cur").value) || 0, tgt = parseFloat($("#bo-tgt").value) || 0, vol = parseFloat($("#bo-vol").value) || p.volume;
+      const cur = parseFloat($("#bo-cur").value) || 0, tgt = parseFloat($("#bo-tgt").value) || 0, vol = parseFloat($("#bo-vol").value) || p.volume || 14000;
       const lb = tgt > cur ? ((tgt - cur) / 10) * D.DOSE.boricAcidLbPer10ppmPer10k * (vol / 10000) : 0;
       $("#bo-out").innerHTML = tgt > cur ? out(`Add <b>${C.fmtLb(lb)}</b> of boric acid to reach ${tgt} ppm borate.<br><span class="muted" style="font-size:.85rem">Boric acid is mildly acidic, so it nudges pH down a touch — re-check pH after. Borates suppress algae and buffer pH; they don't replace chlorine.</span>`) : `<div class="callout" style="margin-top:6px">Already at/above target.</div>`;
     }
@@ -2045,7 +2061,7 @@
       if (g) { $("#to-gpm").value = Math.round(g); const h = $("#to-gpmhint"); if (h) h.innerHTML = `${S.icon("info")} <span>est. from ${hp} HP at typical head — override if you know your exact flow</span>`; }
     }
     function upd() {
-      const vol = parseFloat($("#to-vol").value) || p.volume, gpm = parseFloat($("#to-gpm").value) || 50, tn = parseFloat($("#to-tn").value) || 1;
+      const vol = parseFloat($("#to-vol").value) || p.volume || 14000, gpm = parseFloat($("#to-gpm").value) || 50, tn = parseFloat($("#to-tn").value) || 1;
       const oneTurn = vol / (gpm * 60), hrs = oneTurn * tn;
       $("#to-out").innerHTML = out(`One turnover takes about <b>${Math.round(oneTurn * 10) / 10} hours</b> at ${Math.round(gpm)} GPM. Running ${tn} turnover${tn === 1 ? "" : "s"}/day ≈ <b>${Math.round(hrs * 10) / 10} hours/day</b>.<br><span class="muted" style="font-size:.85rem">TFP rule: run enough to keep water clear &amp; chemicals mixed — often <b>6–12 hrs/day</b>. During a SLAM, run <b>24/7</b>. Variable-speed pumps save money running longer at low speed (lower GPM means more hours, same result).</span>`);
     }
@@ -2059,12 +2075,14 @@
      =================================================================== */
   RENDER.slam = function () {
     const p = profile(); const r = latest(); const v = $("#view-slam");
-    const cya = r.cya != null ? r.cya : 40;
+    const okNum = (x) => x != null && !isNaN(x);   // NaN != null is true → guard explicitly
+    const cya = okNum(r.cya) ? +r.cya : 40;
     const t = C.fcTargets(cya, p.sanitizer === "salt");
-    const slamCurFC = r.fc != null ? r.fc : 0;
+    const slamCurFC = okNum(r.fc) ? +r.fc : 0;
+    const slamVol = p.volume || 14000;
     const slamNeed = t.slam - slamCurFC;
-    const slamGal = C.chlorineGallons(Math.max(0, slamNeed), p.volume, p.chlorinePct);
-    const slamLb = slamNeed > 0 ? (slamNeed / (73 * D.DOSE.calhypoFCperLbPerPct)) * (p.volume / 10000) : 0;
+    const slamGal = C.chlorineGallons(Math.max(0, slamNeed), slamVol, p.chlorinePct || "10");
+    const slamLb = slamNeed > 0 ? (slamNeed / (73 * D.DOSE.calhypoFCperLbPerPct)) * (slamVol / 10000) : 0;
     const sl = state.slam || {};
     if (!sl.active) {
       v.innerHTML = `
