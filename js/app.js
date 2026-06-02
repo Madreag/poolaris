@@ -435,7 +435,7 @@
             ["fiberglass", "Fiberglass", "droplet", "Calcium not critical"],
           ], d.surface)}
         </div>
-        <div class="field"><label>Region (optional)</label><input class="input" id="wiz-region" value="${esc(d.region || "")}" placeholder="e.g. Scottsdale, AZ"></div>`;
+        <div class="field"><label>Region (optional)</label><input class="input" id="wiz-region" value="${esc(d.region || "")}" placeholder="e.g. Austin, TX"></div>`;
       foot.innerHTML = footNav();
     }
 

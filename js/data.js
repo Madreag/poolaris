@@ -262,25 +262,25 @@
     ["Turnover", "Time for the pump to circulate the whole pool's volume once."],
   ];
 
-  /* ---------------- THE USER'S POOL (personalized defaults) ------------ */
-  // Pre-filled from the prior consultation: L-shaped ~14k gal, Scottsdale AZ,
-  // DE filter, recovering from high-CYA trichlor algae bloom, switching to liquid.
+  /* ---------------- Default example pool ------------------------------- */
+  // A neutral, generic example so a fresh install shows sensible placeholders. The moment
+  // the user completes setup, their own profile replaces this — nothing here is personal.
   const USER_DEFAULTS = {
     name: "My Pool",
-    shape: "L",
-    dims: { a: 25, w: 10, b: 22, w2: 10 }, // two legs, ~370 sq ft
+    shape: "rectangle",
+    dims: { a: 32, w: 16 }, // ~512 ft²
     avgDepth: 5,
-    volume: 14000,
-    climate: "desert",
+    volume: 19000,
+    climate: "temperate",
     surface: "plaster",
     sanitizer: "liquid",
-    filter: "de",
+    filter: "cartridge",
     chlorinePct: "10",
     acidPct: "31.45",
-    region: "Scottsdale, AZ",
-    notes: "Recovering from high-CYA bloom (years of trichlor). Broken waste line, a small leak, doing 1-ft drain cycles. Goal: CYA ~50, switch to liquid chlorine + trichlor only for trips.",
-    // a sensible starting reading set reflecting mid-recovery (editable in setup)
-    seedReading: { fc: 8, cc: 0.5, ph: 7.6, ta: 70, ch: 350, cya: 60, salt: null },
+    region: "",
+    notes: "",
+    // typical balanced starting values, shown as estimates until a real test is logged
+    seedReading: { fc: 4, cc: 0, ph: 7.6, ta: 80, ch: 300, cya: 40 },
   };
 
   global.DATA = {

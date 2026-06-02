@@ -32,7 +32,7 @@ figures are **per 10,000 US gallons** unless stated otherwise.
 14. [Seasonal notes](#14-seasonal-notes)
 15. [Pro tips & common mistakes](#15-pro-tips--common-mistakes)
 16. [Glossary](#16-glossary)
-17. [This pool: profile & plan](#17-this-pool-profile--plan)
+17. [Sources](#17-sources)
 18. [Sources](#18-sources)
 
 ---
@@ -483,40 +483,7 @@ Hot, sunny, hard-water regions have their own rules:
 
 ---
 
-## 17. This pool: profile & plan
-
-*Personalized from the prior consultation (see `convo.md`).*
-
-**Profile**
-- **Shape/size:** L-shaped — legs ~25 ft and ~22 ft, ~10 ft wide → ~370 ft² surface, **~14,000 gallons** at 5 ft average depth.
-- **Location/climate:** Scottsdale, AZ — desert (high UV, hard tap water, heavy evaporation).
-- **Surface:** plaster · **Filter:** D.E. · **Sanitizer going forward:** liquid chlorine (10%).
-- **History:** years on trichlor tablets → CYA climbed (assumed ~120) → algae bloom that "normal" chlorine
-  couldn't kill. Recovering via 1-ft drain/refill cycles. Quirks: broken waste line (can't vacuum-to-waste or
-  drain below the skimmer), a small leak, hard fill water.
-
-**Where this leaves you**
-- After ~3–4 one-foot drains off an assumed 120, CYA is roughly **~50–60** — workable. **Test to confirm.**
-- At CYA ~50, your **SLAM level is ~20 ppm** and **daily target ~6–8 ppm** — far cheaper to hold than at 120.
-
-**The plan**
-1. **Confirm CYA** with the FAS-DPD/CYA kit. If still > 60, do 1–2 more 1-ft drains (each ~20%): 60 → 49 → 39.
-2. **Land CYA around 50** (a good desert compromise — protects chlorine from the AZ sun while keeping SLAMs
-   cheap). Going all the way to 30 means dosing almost daily in summer.
-3. **Switch to liquid chlorine as the daily driver.** Dose after sundown to the 6–8 ppm target; in peak summer
-   that's roughly **½ gallon of 10% every couple of days**. Keep trichlor only for trips, and pull it the
-   moment CYA hits ~50–60.
-4. **Manage scale, don't fight calcium.** With hard Scottsdale tap, keep pH 7.5–7.8 and TA on the lower side
-   so **CSI stays near 0**; consider a mobile RO service if CH gets extreme. Don't burn water chasing CH the
-   way you did for CYA.
-5. **Fix the leak** (bucket test) and the waste line when convenient — both make future water management easier.
-
-> Use the **Poolaris app** (`index.html`) to log each test, watch CYA trend down, and get the exact gallons to
-> add at every step.
-
----
-
-## 18. Sources
+## 17. Sources
 
 - **Trouble Free Pool wiki** — *CYA/Chlorine Relationship*, *Recommended Levels*, *CSI and LSI*, *SLAM*,
   *Recommended Pool Chemicals* (troublefreepool.com/wiki).
@@ -526,7 +493,6 @@ Hot, sunny, hard-water regions have their own rules:
 - **Orenda Technologies** — CSI/LSI and pH science.
 - First-principles chemistry for every dosing coefficient (stoichiometry & carbonate-equilibrium modeling),
   cross-checked against PoolMath and thepoolnerd calculators.
-- The prior consultation in `convo.md` for this pool's specifics.
 
 *All targets and formulas verified against the above as of May 2026. Doses are estimates — add ~¾, circulate,
 and re-test before adding more.*

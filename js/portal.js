@@ -446,10 +446,10 @@
     layer.innerHTML = `<div class="sheet" style="width:min(440px,100%)" role="dialog" aria-modal="true" aria-label="Add client pool">
       <div class="sheet__head"><h2>${icon("plus")} Add a client pool</h2><button class="iconbtn" id="acClose" aria-label="Close">${icon("close")}</button></div>
       <p class="muted" style="margin:-4px 0 12px">Add a pool you service. You can invite the homeowner later so they can see it too.</p>
-      <div class="field"><label for="acAddr">Street address</label><input class="input" id="acAddr" placeholder="4521 E Vista Dr" autocomplete="off"></div>
+      <div class="field"><label for="acAddr">Street address</label><input class="input" id="acAddr" placeholder="123 Main St" autocomplete="off"></div>
       <div class="grid cols-2" style="gap:10px">
-        <div class="field"><label for="acCity">City</label><input class="input" id="acCity" placeholder="Scottsdale" autocomplete="off"></div>
-        <div class="field"><label for="acZip">ZIP</label><input class="input" id="acZip" placeholder="85254" autocomplete="off"></div>
+        <div class="field"><label for="acCity">City</label><input class="input" id="acCity" placeholder="Anytown" autocomplete="off"></div>
+        <div class="field"><label for="acZip">ZIP</label><input class="input" id="acZip" placeholder="12345" autocomplete="off"></div>
       </div>
       <div class="field"><label for="acOwner">Owner name (optional)</label><input class="input" id="acOwner" placeholder="Marisol G" autocomplete="off"></div>
       <div class="field"><label for="acVol">Pool volume (gal, optional)</label><input class="input" id="acVol" type="number" placeholder="15000"></div>
