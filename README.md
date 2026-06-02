@@ -41,6 +41,21 @@ Pool stores guess and upsell. Poolaris does the chemistry **for** you — the sa
 - 🏢 **Optional multi‑tenant portal** — a pool‑service company can manage many client pools: roster, per‑tech routes, service visits, messaging, and reports.
 - 📲 **Installable PWA** — add to your home screen; works offline as an app.
 
+## 📸 A closer look
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="assets/plan.png" width="100%" alt="Path to Perfect — the ranked, dosed step-by-step plan" /><br />
+      <sub><b>Path to Perfect</b> — every off number becomes an ordered step with the exact dose, plus an optional path to a perfect 100%.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="assets/calculator.png" width="100%" alt="Acid calculator with a dose-vs-pH curve and alkalinity table" /><br />
+      <sub><b>Calculators</b> — each tool shows the dose <i>and</i> the whole picture (here: acid needed vs. target pH, and how alkalinity changes it).</sub>
+    </td>
+  </tr>
+</table>
+
 ## 🚀 Quick start
 
 > On macOS/Linux the Python command is `python3`. On Windows it's `python`.
