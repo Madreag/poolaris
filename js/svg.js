@@ -268,11 +268,14 @@
       const x = padL + i * bw + bw * 0.18, bwi = bw * 0.64;
       const h = (v) => (v / maxFC) * plotH;
       const hot = markCya != null && Math.abs(r.cya - markCya) <= 10;
-      bars += `${hot ? `<rect x="${x - 6}" y="${yb - h(r.slam) - 9}" width="${bwi + 12}" height="${h(r.slam) + 9}" rx="6" fill="#15aabf" fill-opacity=".16"/>` : ""}
+      // NO highlight box near the bars (it kept reading as a stray bar). The selected CYA is
+      // marked only by a small teal pill behind its x-axis label, well below the plot area.
+      bars += `
         <rect x="${x}" y="${yb - h(r.slam)}" width="${bwi}" height="${h(r.slam)}" rx="3" fill="#ffd8cc"/>
         <rect x="${x}" y="${yb - h(r.tgt)}" width="${bwi}" height="${h(r.tgt)}" rx="3" fill="url(#g-good)"/>
         <rect x="${x}" y="${yb - h(r.min)}" width="${bwi}" height="${h(r.min)}" rx="3" fill="#0e7da8"/>
-        <text x="${x + bwi / 2}" y="${yb + 16}" font-size="11" text-anchor="middle" fill="${hot ? "#0e7da8" : T.mut}" font-weight="${hot ? 800 : 700}">${r.cya}</text>
+        ${hot ? `<rect x="${x + bwi / 2 - 17}" y="${yb + 5}" width="34" height="16" rx="8" fill="#15aabf"/>` : ""}
+        <text x="${x + bwi / 2}" y="${yb + 16}" font-size="11" text-anchor="middle" fill="${hot ? "#ffffff" : T.mut}" font-weight="${hot ? 800 : 700}">${r.cya}</text>
         <text x="${x + bwi / 2}" y="${yb - h(r.slam) - 5}" font-size="10" text-anchor="middle" fill="#e8590c" font-weight="800">${r.slam}</text>`;
     });
     return wrap(`0 0 ${W} ${H}`, `${DEFS}

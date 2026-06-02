@@ -6,6 +6,12 @@
 # The server recreates data/ on first run; a fresh clone starts empty.
 data/
 
+# --- Secrets (none are committed; this is defensive) -----------------------
+.env
+.env.*
+*.key
+*.pem
+
 # --- Python ----------------------------------------------------------------
 __pycache__/
 *.py[cod]
