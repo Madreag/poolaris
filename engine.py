@@ -60,6 +60,7 @@ OVERDUE_SLAM_DAYS = 1  # during a SLAM you should test constantly
 # tells the app "I'm aerating", the 24/7 engine must not fire a pH-out alert.
 _ACTIVITY_SUPPRESS = {
     "aerating": {"ph_out"},
+    "lowering-ph": {"ph_out"},
     "lowering-ta": {"ph_out", "csi_corrosive"},
     "away": {"overdue_test", "never_tested", "slam_stall"},
     "new-plaster": {"ph_out", "csi_scaling"},
@@ -208,6 +209,25 @@ def evaluate_pool(pool, log, now, wx=None, doses=None):
                 dedup_bucket="cc",
                 metric="cc",
                 route="slam",
+            )
+        )
+
+    # ---- pH high — needs acid (skip if a high FC is making the pH test read falsely high) ----
+    ph = eff.get("ph")
+    fc_for_ph = eff.get("fc")
+    if ph is not None and ph > 7.8 and not (fc_for_ph is not None and fc_for_ph > 10):
+        alerts.append(
+            _alert(
+                pool["id"],
+                "ph_out",
+                "watch" if ph >= 8.0 else "info",
+                "pH is high — add acid",
+                f"pH is {round(ph, 1)} (ideal 7.5-7.8). High pH dulls your chlorine and can cloud the water or scale surfaces.",
+                "Add muriatic acid to bring pH to ~7.6 (the acid calculator sizes it), then re-test.",
+                dedup_bucket="ph",
+                metric="ph",
+                route="calculators",
+                calc="acid",
             )
         )
 

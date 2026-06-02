@@ -341,13 +341,22 @@
 
     // ---- pH ----
     if (has(r.ph)) {
-      if (r.ph > D.RANGES.ph.ok[1]) {
-        const acid = acidForPH(r.ph, 7.6, r.ta || 80, vol, acidPct);
-        actions.push({
-          prio: "soon", key: "ph", title: "Bring pH down",
-          why: `pH is ${r.ph} (want 7.5–7.8). High pH dulls chlorine and invites scale.`,
-          dose: acid ? { text: `${fmtFlOz(acid.flOz)} of ${acidPct}% muriatic acid`, sub: `targets pH 7.6 (also drops TA ~${acid.taDrop}). Add ¾ first, circulate, retest.` } : null,
-        });
+      const fcInterferes = has(r.fc) && r.fc > 10; // high FC makes the pH test read falsely high (TFP)
+      if (r.ph > D.RANGES.ph.ideal[1]) {           // above the 7.5–7.8 ideal band
+        if (fcInterferes) {
+          actions.push({
+            prio: "info", key: "ph", title: "Re-check pH once FC comes down",
+            why: `pH reads ${r.ph}, but with FC at ${r.fc} the pH test runs falsely high — hold off on acid. Re-test pH after FC drops below ~10, then dose if it's still high.`,
+            dose: null,
+          });
+        } else {
+          const acid = acidForPH(r.ph, 7.6, r.ta || 80, vol, acidPct);
+          actions.push({
+            prio: r.ph >= D.RANGES.ph.ok[1] ? "soon" : "info", key: "ph", title: "Bring pH down",
+            why: `pH is ${r.ph} (ideal 7.5–7.8). High pH dulls chlorine and invites scale.`,
+            dose: acid ? { text: `${fmtFlOz(acid.flOz)} of ${acidPct}% muriatic acid`, sub: `targets pH 7.6 (also drops TA ~${acid.taDrop}). Add ¾ first, circulate, retest.` } : null,
+          });
+        }
       } else if (r.ph < D.RANGES.ph.ok[0]) {
         const boraxOz = ((7.6 - r.ph) / 0.1) * D.DOSE.boraxOzPer01PHper10k * (vol / 10000);
         actions.push({ prio: "soon", key: "ph", title: "Raise pH", why: `pH is ${r.ph} — low pH is corrosive to plaster &amp; metal.`, dose: { text: `Aerate (free) — or ~${fmtLb(boraxOz / 16)} of borax`, sub: "point returns up / run a fountain to raise pH for free in 1–3 days; borax is the fast option" } });

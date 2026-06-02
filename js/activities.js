@@ -53,6 +53,23 @@
       },
     },
     {
+      id: "lowering-ph", name: "Lowering pH", short: "Lowering pH", icon: "flask", type: "ongoing",
+      blurb: "Adding acid to bring pH down",
+      ask: "Your pH dropped with no aeration — did you add acid to lower it?",
+      suppress: ["ph-rising", "ph-rootcause-ta", "ph-implausible"], suppressAlert: ["ph_out"],
+      status: (ctx) => {
+        const ph = ctx.latest && ctx.latest.ph;
+        return {
+          title: "Lowering pH with acid",
+          detail: ph != null
+            ? `pH is at <b>${ph}</b>. Muriatic acid drops pH (and a little TA) — add about ¾ of the dose, circulate ~30 min, then re-test before adding more.`
+            : "Add acid slowly over a return with the pump on, then re-test. The acid calculator sizes the dose; the Dosing tab tracks it as it mixes in.",
+          recommend: "Aim for pH 7.5–7.8. Don't dose acid while FC is above ~10 — it makes the pH test read falsely high.",
+          route: "calculators", calc: "acid",
+        };
+      },
+    },
+    {
       id: "lowering-ta", name: "Lowering alkalinity", short: "Lowering TA", icon: "flask", type: "ongoing",
       blurb: "Acid + aeration to bring TA down",
       ask: "You added acid to drop pH while TA is high — are you running the acid-and-aeration method to lower TA?",
@@ -267,6 +284,10 @@
     const phVolatile = Tph.n >= 3 && Math.abs(Tph.totalChange) >= 0.3;
     consider("lowering-ta", taHigh && phVolatile && !isActive(state, "aerating"));
 
+    // pH falling with no aeration and TA isn't high → just lowering pH with acid?
+    const phFalling = Tph.n >= 2 && Tph.direction === "falling" && Tph.perWeek <= -0.25;
+    consider("lowering-ph", phFalling && !taHigh && !isActive(state, "lowering-ta"));
+
     // CYA (or CH/salt) trending DOWN without obvious cause → draining?
     const cyaFalling = Tcya.n >= 2 && Tcya.direction === "falling" && Tcya.totalChange <= -10;
     consider("draining", cyaFalling);
@@ -285,7 +306,7 @@
     injectCSS();
     const state = ctx.state;
     const active = activeList(state);
-    const quick = ["aerating", "lowering-ta", "draining", "cover-on", "away"];
+    const quick = ["aerating", "lowering-ph", "lowering-ta", "draining", "cover-on", "away"];
     const chips = quick.map((id) => {
       const def = byId(id); const on = isActive(state, id);
       return `<button class="act-chip ${on ? "is-on" : ""}" data-act-toggle="${id}" aria-pressed="${on}">
