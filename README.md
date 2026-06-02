@@ -9,6 +9,7 @@
 **A guided, offline‑first pool‑care app built on the [Trouble Free Pool](https://www.troublefreepool.com/) (TFP) method.**
 Log your water tests and it turns them into an exact, step‑by‑step plan — how much chlorine or acid to add, when to SLAM, your CSI, and what the weather is about to do to your chlorine.
 
+[![CI](https://github.com/Madreag/poolaris/actions/workflows/ci.yml/badge.svg)](https://github.com/Madreag/poolaris/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-proprietary-red)
 ![Python](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)
 ![Dependencies](https://img.shields.io/badge/dependencies-zero-2ea44f)

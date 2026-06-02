@@ -2897,7 +2897,7 @@
           // "Sign in / Create account" affordance so multi-device sync is one tap away.
           bootOfflineWithSignIn();
         }
-      }).catch(() => bootOfflineWithSignIn());
+      }).catch(() => { portal.mode = "offline"; bootOfflineFirst(); }); // no backend reachable (static host / offline) → pure offline, no dead Sign-in button
     } else {
       bootOfflineFirst();
     }
